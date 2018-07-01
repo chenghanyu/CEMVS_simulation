@@ -1,0 +1,26 @@
+> sessionInfo()
+R version 3.3.1 (2016-06-21)
+Platform: x86_64-apple-darwin13.4.0 (64-bit)
+Running under: OS X 10.10.5 (Yosemite)
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+ [1] compiler  parallel  grid      stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+ [1] R.matlab_3.6.1            memoise_1.1.0             Hmisc_4.1-1               ggplot2_2.2.1             Formula_1.2-2            
+ [6] survival_2.41-3           lattice_0.20-35           devtools_1.13.2           neuRosim_0.2-12           deSolve_1.20             
+[11] inline_0.3.14             RcppArmadillo_0.7.900.2.0 Rcpp_0.12.12              LaplacesDemon_16.0.1      mvtnorm_1.0-6            
+[16] abind_1.4-5               mvnfast_0.2.5             doMC_1.3.4                iterators_1.0.8           foreach_1.4.3            
+[21] Matrix_1.2-10             fields_9.0                maps_3.2.0                spam_2.1-1                dotCall64_0.9-04         
+
+loaded via a namespace (and not attached):
+ [1] splines_3.3.1       colorspace_1.3-2    htmltools_0.3.6     yaml_2.1.16         base64enc_0.1-3     rlang_0.1.1        
+ [7] R.oo_1.21.0         R.utils_2.5.0       foreign_0.8-69      withr_1.0.2         RColorBrewer_1.1-2  plyr_1.8.4         
+[13] stringr_1.2.0       munsell_0.4.3       gtable_0.2.0        R.methodsS3_1.7.1   htmlwidgets_0.9     codetools_0.2-15   
+[19] latticeExtra_0.6-28 knitr_1.18          htmlTable_1.11.1    acepack_1.4.1       scales_0.4.1        backports_1.1.0    
+[25] checkmate_1.8.3     gridExtra_2.2.1     digest_0.6.13       stringi_1.1.5       tools_3.3.1         magrittr_1.5       
+[31] lazyeval_0.2.0      tibble_1.3.3        cluster_2.0.6       data.table_1.10.4   rstudioapi_0.6      rpart_4.1-11       
+[37] nnet_7.3-12    

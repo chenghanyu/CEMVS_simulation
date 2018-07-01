@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1530473695260.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "2|72|136|0|\n138|69|275|0|\n278|53|286|0|\n289|42|294|0|\n298|55|331|0|\n335|49|369|0|\n372|41|412|0|\n415|43|430|0|\n433|83|477|0|\n486|51|571|0|\n581|34|674|0|\n678|38|691|0|\n692|59|738|0|\n740|32|742|0|\n748|57|776|0|\n",
+    "hash" : "427235191",
+    "id" : "1A15060B",
+    "lastKnownWriteTime" : 1530474490,
+    "last_content_update" : 1530474979425,
+    "path" : "~/Documents/CMEVS_simulation/EMVSmainfcn.R",
+    "project_path" : "EMVSmainfcn.R",
+    "properties" : {
+        "cursorPosition" : "581,34",
+        "scrollLine" : "583"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

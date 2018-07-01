@@ -1,0 +1,196 @@
+// log_g_sig_noncir_cpp.cpp
+
+#include <stdio.h>
+#include <math.h> 
+#include <RcppArmadillo.h>
+
+using namespace std;
+using namespace Rcpp;
+using namespace arma;
+
+
+// [[Rcpp::depends("RcppArmadillo")]]
+// [[Rcpp::export]]
+arma::cx_mat create_Dmat_noncir_cpp(arma::cx_vec lam0,
+                                    arma::cx_vec lam1,
+                                    arma::cx_vec omega0,
+                                    arma::cx_vec omega1,
+                                    double b0, double b1, arma::vec p_star) {
+
+    arma::cx_vec D = (1. / omega0) * (1 + b0) * (1 - p_star) +
+        (1. / omega1) * (1 + b1) * p_star;
+
+    return(diagmat(D));
+
+}
+
+
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+arma::cx_mat create_Gmat_noncir_cpp(arma::cx_vec lam0,
+                                    arma::cx_vec lam1,
+                                    arma::cx_vec omega0,
+                                    arma::cx_vec omega1,
+                                    double b0, double b1, arma::vec p_star) {
+    arma::cx_vec G = (conj(lam0) / omega0 * omega0) * (1 + b0) * (1 - p_star) +
+        (conj(lam1) / omega1 * omega1) * (1 + b1) * p_star;
+    return(diagmat(G));
+}
+
+
+
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+List M_beta_noncir_cpp(arma::mat XtYre, arma::mat XtYim,
+                       arma::mat XtX_cv,
+                       arma::cx_mat Dv,
+                       arma::mat Gv_re,
+                       arma::mat Gv_im) {
+    arma::cx_vec b;
+    arma::cx_vec a;
+    arma::cx_mat E = XtX_cv + 2 * Dv;
+    if (XtX_cv.n_rows == 1) {
+        b = (2 * Gv_im * XtYre - (E - 2 * Gv_re) * XtYim) /
+            ((2 * Gv_im) * (2 * Gv_im) - E * E + (2 * Gv_re) * (2 * Gv_re));
+        a = (-2 * Gv_im * XtYim + (E + 2 * Gv_re) * XtYre) /
+            (E * E - (2 * Gv_re) * (2 * Gv_re) - (2 * Gv_im) * (2 * Gv_im));
+    } else {
+        arma::cx_mat denom_b = (2 * Gv_im) * (2 * Gv_im) - E * E + (2 * Gv_re) * (2 * Gv_re);
+        b = inv(denom_b) * (2 * Gv_im * XtYre - (E - 2 * Gv_re) * XtYim);
+        arma::cx_mat denom_a = E * E - (2 * Gv_re) * (2 * Gv_re) - (2 * Gv_im) * (2 * Gv_im);
+        a = inv(denom_a) * ((E + 2 * Gv_re) * XtYre - 2 * Gv_im * XtYim);
+    }
+
+    arma::vec beta_re = real(a);
+    arma::vec beta_im = real(b);
+
+
+    return List::create(
+        _["beta_re"] = beta_re,
+        _["beta_im"] = beta_im,
+        _["beta_cx"] = cx_vec(real(a), real(b))
+    );
+    // return(cx_vec(real(a), real(b)));
+}
+
+
+// [[Rcpp::depends(RcppArmadillo)]]
+// [[Rcpp::export]]
+arma::mat cplx_to_real_cov_cpp(arma::cx_vec Omega, arma::cx_vec Lam) {
+    arma::mat Vrr = (0.5) * arma::real(Omega + Lam);
+    arma::mat Vii = (0.5) * arma::real(Omega - Lam);
+    arma::mat Vri = (0.5) * arma::imag(-Omega + Lam);
+    arma::mat Vir = (0.5) * arma::imag(Omega + Lam);
+
+    arma::mat real_cov = join_cols(join_rows(Vrr, Vri), join_rows(Vir, Vii));
+    return(real(real_cov));
+}
+
+
+
+// [[Rcpp::depends("RcppArmadillo")]]
+// [[Rcpp::export]]
+double lbeta(double x, double y){
+    double temp = (lgamma(x) + lgamma(y)) / lgamma(x + y);
+    // temp *= tgamma(y);
+    // temp /= tgamma(x + y);
+    return temp;
+}
+
+// [[Rcpp::depends("RcppArmadillo")]]
+// [[Rcpp::export]]
+double log_prior_cpp(arma::mat Gamma, double a, double b, int NN)  {
+    
+    double x = accu(Gamma) + a;
+    double y = NN - accu(Gamma) + b;
+    // double prior_val = log(beta(x, y)) - log(beta(a, b));
+    double prior_val = lbeta(x, y) - lbeta(a, b);
+    
+    if(isinf(prior_val)|| isinf(-prior_val)){
+        prior_val = 0.5 * log(2 * M_PI) + (x - 0.5) * log(x) + 
+            (y - 0.5) * log(y) - (x + y - 0.5) * log(x + y);
+    }
+    return(prior_val); 
+    
+}
+
+
+
+// [[Rcpp::depends("RcppArmadillo")]]
+// [[Rcpp::export]]
+double log_g_sig_noncir_cpp(arma::mat Active, arma::mat X, arma::mat Y,
+                            double a_sig, double b_sig, arma::mat p_star_mat,
+                            arma::cx_vec lam0, arma::cx_vec lam1,
+                            arma::cx_vec omega0, arma::cx_vec omega1,
+                            double b0, double b1, double a, double b,
+                            double v0 = 0) {
+    const int qq = X.n_cols;
+    const int nn = X.n_rows;
+    const int N = sqrt(Y.n_cols);
+    const int Nvoxels = Y.n_cols;
+    int n = nn / 2;
+    int q = qq / 2;
+    double Ssq_sum = 0;
+    double XX_sum = 0;
+    double dd_sum = 0;
+    // arma::mat x_cv = X.submat(0, 0, n - 1, q - 1);
+    // arma::mat XtX_cv = x_cv.t() * x_cv;
+    arma::mat Yre = Y.rows(0, n - 1);
+    arma::mat Yim = Y.rows(n, nn - 1);
+    vec Ssq;
+    double value;
+    if (v0 == 0) {
+        double b1 = norm(lam1) / (norm(omega1) - norm(lam1));
+        for (int j = 0; j < Nvoxels; ++j) {
+            int no_active = sum(Active.col(j));
+            if (no_active > 0) {
+                arma::mat x = X.submat(0, 0, n - 1, q - 1);
+                // arma::vec idx = find(vectorise(Active.col(j)) == 1);
+                arma::mat x_act = x.cols(find(Active.col(j) == 1));
+                arma::vec actvec = Active.col(j);
+                arma::mat actvec2 = zeros<mat>(qq, 1);
+                actvec2.row(0) = actvec;
+                actvec2.row(1) = actvec;
+                arma::mat X_act = X.cols(find(actvec2 == 1));
+                // arma::mat X_act = X.cols(find(vec(Active.col(j), Active.col(j)) == 1));
+                arma::mat XtYre = x_act * Yre.col(j);
+                arma::mat XtYim = x_act * Yim.col(j);
+                arma::cx_mat Dv = create_Dmat_noncir_cpp(lam0, lam1, omega0,
+                                                         omega1, b0, b1,
+                                                         p_star_mat.col(j));
+                arma::cx_mat Gv = create_Gmat_noncir_cpp(lam0, lam1, omega0,
+                                                         omega1, b0, b1,
+                                                         p_star_mat.col(j));
+                arma::mat XtX_cv = x_act.t() * x_act;
+                List coef = M_beta_noncir_cpp(XtYre, XtYim, XtX_cv, Dv,
+                                                 real(Gv), imag(Gv));
+                arma::mat XtY = X_act * Y.col(j);
+                arma::vec coef_re = coef["beta_re"];
+                arma::vec coef_im = coef["beta_im"];
+                
+                arma::mat coef_ri = zeros<mat>(qq, 1);
+                coef_ri.row(0) = coef_re;
+                coef_ri.row(1) = coef_im;
+                arma::mat XtYcoef = XtY.t() * coef_ri;
+                Ssq = dot(Y.col(j), Y.col(j)) - XtYcoef.t() * XtYcoef;
+                Ssq_sum = Ssq_sum + Ssq[0];
+
+                arma::mat XtX = X_act.t() * X_act;
+                arma::mat Sig_real = cplx_to_real_cov_cpp(omega1, lam1);
+                double det_value = (-0.5) *
+                        real(log_det(XtX + inv_sympd(Sig_real)));
+                XX_sum = XX_sum + det_value;
+                double ddd = (-0.5) * real(log_det(Sig_real));
+                dd_sum = dd_sum + ddd;
+            } else {
+                Ssq = dot(Y.col(j), Y.col(j));
+                Ssq_sum = Ssq_sum + Ssq[0];
+            }
+        }
+        value = XX_sum + dd_sum - ((0.5) * (N ^ 2 * nn) + a_sig) *
+            log(b_sig + Ssq_sum);
+        value = value + log_prior_cpp(Active, a, b, Active.n_elem);
+    }
+    return(value);
+}
+
