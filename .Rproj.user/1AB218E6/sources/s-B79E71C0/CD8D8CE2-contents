@@ -14,11 +14,6 @@ Data
 All data sets and functions for data manipulation are in the folder **data**. The original simulated data set *GrandPrelimSimData.mat* is stored in .mat format. The data have tansformed into a text file and RData file that can be read and operated in R.
 
 
-Implemention of algotithms
-------------------------------------------------
-To run the general C-EMVS algoriothm, 
-
-
 Figures
 ------------------------------------------------
 The figures generated from **circularEMVS_sim2.R** are saved in the **figures** folder.
